@@ -47,7 +47,6 @@ This project builds a **Retrieval-Augmented Generation (RAG)** chatbot that can 
 ## 🚀 Setup & Run Instructions
 
 1️⃣ Create virtual environment
-```bash
 python -m venv .venv
 
 2️⃣ Activate
