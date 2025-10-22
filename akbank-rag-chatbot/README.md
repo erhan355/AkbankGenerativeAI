@@ -1,48 +1,75 @@
-Set-Content README.md @"
-# 🏆 Akbank GenAI Bootcamp – RAG Chatbot (Football Stats Assistant)
+# 🏆 Akbank GenAI Bootcamp – RAG Chatbot (European Football Stats Assistant)
 
-## 🎯 Projenin Amacı
-RAG (Retrieval-Augmented Generation) ile futbol istatistik verilerinden doğal dilde (TR/EN) sorulara cevap veren bir chatbot geliştirmek.
+## 🎯 Project Overview
+This project builds a **Retrieval-Augmented Generation (RAG)** chatbot that can answer natural language questions (TR/EN) about **European football statistics** using structured match and player data.
 
-**Örnek Sorular (TR):**
-- Galatasaray’ın 2022’de Fenerbahçe’ye karşı oynadığı maçların skoru neydi?
-- Beşiktaş’ın 2020 sezonunda kaç gol attı?
-- Süper Lig’de en çok gol atan takım hangisiydi 2019’da?
-- Fenerbahçe’nin deplasman galibiyetleri 2021’de ne kadardı?
-- Trabzonspor’un son şampiyonluğu ne zaman?
+### 💬 Example Questions (EN)
+- What was the score of Manchester United vs Chelsea in 2022?  
+- How many goals did Lionel Messi score in the 2011–2012 season?  
+- Which team won the Premier League in 2020?  
+- Who were the top scorers in La Liga in 2018?  
+- How many assists did Cristiano Ronaldo make in Serie A 2021?
 
-**Sample Questions (EN):**
-- What was the score of Galatasaray vs Fenerbahçe matches in 2022?
-- How many goals did Beşiktaş score in the 2020 season?
-- Which team scored the most goals in the Turkish Super Lig in 2019?
-- What were Fenerbahçe’s away wins in 2021?
-- When was Trabzonspor’s last championship?
+### 🔍 Örnek Sorular (TR)
+- Manchester United ile Chelsea’nin 2022’deki maçlarının skoru neydi?  
+- Lionel Messi 2011–2012 sezonunda kaç gol attı?  
+- Premier League’i 2020 yılında hangi takım kazandı?  
+- 2018’de La Liga’da en çok gol atan oyuncular kimlerdi?  
+- Cristiano Ronaldo Serie A’da 2021’de kaç asist yaptı?
 
-## 📚 Veri Seti Hakkında
-- Kaynak: https://huggingface.co/datasets/julien-c/kaggle-hugomathien-soccer
-- İçerik: Avrupa ligleri için maç, takım, oyuncu, lig verileri (SQLite).
-- Hazırlık: SQLite → CSV → takım/sezon/metin özetleri → chunking (800/120) → Chroma.
-- Not: Veri **repoda değil**. README’deki adımlarla indirip `data/` klasörüne koyulacak.
+---
 
-## 🧩 Kullanılan Yöntemler
-- **LLM:** Gemini 1.5 Flash
-- **Embedding:** `text-embedding-004`
-- **Retriever / Vektör DB:** Chroma
-- **Framework:** LangChain (langchain-google-genai)
-- **Web Arayüzü:** Streamlit
-- **Backend:** FastAPI
+## 📚 Dataset
+- **Source:** [Hugging Face – julien-c/kaggle-hugomathien-soccer](https://huggingface.co/datasets/julien-c/kaggle-hugomathien-soccer)  
+- **Content:** Match, player, team, and league data (European leagues, in SQLite format)  
+- **Preparation:** SQLite → CSV → text summaries by team/season → chunking (800/120) → Chroma vector store  
+- **Note:** Dataset **not included in repo** – download and place inside `data/` directory as described below.
 
-## 📊 Elde Edilen Sonuçlar (Özet – örneklem)
-- Hit@4 ≈ %85 (örnek 5–10 soru)
-- Ortalama top-k: 4
-- TR/EN karma sorgularda otomatik normalizasyon
+---
 
-## 🔧 Kurulum & Çalıştırma Kılavuzu
-### 1) Ortam
+## ⚙️ Tech Stack
+- **LLM:** Gemini 1.5 Flash  
+- **Embedding Model:** `models/text-embedding-004`  
+- **Vector DB:** Chroma  
+- **Framework:** LangChain (langchain-google-genai)  
+- **Backend:** FastAPI  
+- **Web Interface:** Streamlit  
+
+---
+
+## 📈 Performance (Sample)
+- Retrieval accuracy @top4 ≈ 85% (on 5–10 random queries)  
+- Handles bilingual (TR/EN) questions automatically  
+- Mean context size: 4 chunks  
+
+---
+
+## 🚀 Setup & Run Instructions
+
+1️⃣ Create virtual environment
 ```bash
 python -m venv .venv
-# Windows
-.\\.venv\\Scripts\\activate
-pip install --upgrade pip
+
+2️⃣ Activate
+.\.venv\Scripts\activate
+
+3️⃣ Install requirements
 pip install -r requirements.txt
-cp .env.example .env
+
+4️⃣ Create .env file
+GEMINI_API_KEY=YOUR_API_KEY
+EMBEDDING_MODEL=models/text-embedding-004
+GENERATION_MODEL=models/gemini-1.5-flash
+DOCS_DIR=./data/text
+VECTOR_DB_DIR=./chroma_db
+
+5️⃣ Build index
+python backend\index_builder.py
+
+6️⃣ Run API
+uvicorn backend.main:app --reload --port 8000
+
+
+Then open your browser at http://127.0.0.1:8000/docs
+
+to test the endpoints interactively.
