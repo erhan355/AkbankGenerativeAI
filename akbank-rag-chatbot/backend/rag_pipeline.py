@@ -9,16 +9,20 @@ load_dotenv()
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
-from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
 from langchain.chains.retrieval_qa.base import RetrievalQA
 from langchain.schema import Document
 
 # ==== ENV ====
 GEMINI_API_KEY   = os.getenv("GEMINI_API_KEY")
-EMBEDDING_MODEL  = os.getenv("EMBEDDING_MODEL", "text-embedding-004")
-GENERATION_MODEL = os.getenv("GENERATION_MODEL", "gemini-1.5-flash")
+EMBEDDING_MODEL  = os.getenv("EMBEDDING_MODEL", "models/embedding-001")
+EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "huggingface")  # "google" or "huggingface"
+GENERATION_MODEL = os.getenv("GENERATION_MODEL", "gemini-2.5-flash")
 DOCS_DIR         = os.getenv("DOCS_DIR", "./data/text")
 VECTOR_DB_DIR    = os.getenv("VECTOR_DB_DIR", "./chroma_db")
+
+# Configuration loaded successfully
 
 # ==== Loader ====
 def load_text_documents(docs_dir: str | Path) -> List[Document]:
@@ -38,12 +42,28 @@ def load_text_documents(docs_dir: str | Path) -> List[Document]:
         raise RuntimeError(f"No .md/.txt files found under {base}. Did you run the extraction script?")
     return docs
 
+# ==== Embeddings Helper ====
+def get_embeddings():
+    """
+    Embedding provider'a göre uygun embedding modelini döndürür.
+    """
+    if EMBEDDING_PROVIDER.lower() == "google":
+        try:
+            return GoogleGenerativeAIEmbeddings(model=EMBEDDING_MODEL, google_api_key=GEMINI_API_KEY)
+        except Exception as e:
+            print(f"Google embeddings failed: {e}")
+            print("Falling back to HuggingFace embeddings...")
+            return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    else:
+        # Default to HuggingFace embeddings
+        return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+
 # ==== Build / Load Vector DB ====
 def build_or_load_vectorstore() -> Chroma:
     """
     Varsa Chroma'yı yükler; yoksa DOCS_DIR'den belgeleri okuyup oluşturur.
     """
-    embeddings = GoogleGenerativeAIEmbeddings(model=EMBEDDING_MODEL, google_api_key=GEMINI_API_KEY)
+    embeddings = get_embeddings()
 
     # Eğer indeks klasörü doluysa direkt yükle
     if os.path.exists(VECTOR_DB_DIR) and os.listdir(VECTOR_DB_DIR):
@@ -73,7 +93,8 @@ def get_qa_chain() -> RetrievalQA:
 def answer(question: str) -> str:
     """Soruya kısa yanıt döndürür (string)."""
     chain = get_qa_chain()
-    return chain.run(question)
+    result = chain.invoke({"query": question})
+    return result["result"]
 
 def retrieve_sources(question: str) -> List[Dict[str, Any]]:
     """
@@ -82,7 +103,7 @@ def retrieve_sources(question: str) -> List[Dict[str, Any]]:
     """
     vectordb = build_or_load_vectorstore()
     retriever = vectordb.as_retriever(search_kwargs={"k": 4})
-    docs = retriever.get_relevant_documents(question)
+    docs = retriever.invoke(question)
     return [{"content": d.page_content, "meta": d.metadata} for d in docs]
 def top_k_sources(question: str, k: int = 4):
     """
@@ -91,4 +112,4 @@ def top_k_sources(question: str, k: int = 4):
     """
     vectordb = build_or_load_vectorstore()
     retriever = vectordb.as_retriever(search_kwargs={"k": k})
-    return retriever.get_relevant_documents(question)
+    return retriever.invoke(question)

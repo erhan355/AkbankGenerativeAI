@@ -1,46 +1,48 @@
 # 🏆 Akbank GenAI Bootcamp – RAG Chatbot (European Football Stats Assistant)
 
 ## 🎯 Project Overview
-This project builds a **Retrieval-Augmented Generation (RAG)** chatbot that can answer natural language questions (TR/EN) about **European football statistics** using structured match and player data.
+This project builds a **Retrieval-Augmented Generation (RAG)** chatbot that can answer natural language questions (TR/EN) about **European football match results and team statistics** for selected top teams from Premier League, La Liga, Bundesliga, Serie A, and Ligue 1 using historical match data (2008-2015).
 
 ### 💬 Example Questions (EN)
-- What was the score of Manchester United vs Chelsea in 2022?  
-- How many goals did Lionel Messi score in the 2011–2012 season?  
-- Which team won the Premier League in 2020?  
-- Who were the top scorers in La Liga in 2018?  
-- How many assists did Cristiano Ronaldo make in Serie A 2021?
+- What was the score of Manchester United vs Arsenal in 2012 ?
+  "answer": "Manchester United and Arsenal played each other twice in competitive matches in 2008:\n\n*   **February 16, 2008 (FA Cup):** Manchester United 4 - 0 Arsenal\n*   **April 13, 2008 (Premier League):** Manchester United 2 - 1 Arsenal"
+- What were Liverpool's results against Stoke City in 2015 ?
 
-### 🔍 Örnek Sorular (TR)
-- Manchester United ile Chelsea’nin 2022’deki maçlarının skoru neydi?  
-- Lionel Messi 2011–2012 sezonunda kaç gol attı?  
-- Premier League’i 2020 yılında hangi takım kazandı?  
-- 2018’de La Liga’da en çok gol atan oyuncular kimlerdi?  
-- Cristiano Ronaldo Serie A’da 2021’de kaç asist yaptı?
-
+  "answer": "In 2015, Liverpool played Stoke City twice:\n\n*   **May 24, 2015:** Stoke City 6 - 1 Liverpool (Premier League)\n*   **August 9, 2015:** Stoke City 0 - 1 Liverpool (Premier League)"
 ---
 
 ## 📚 Dataset
 - **Source:** [Hugging Face – julien-c/kaggle-hugomathien-soccer](https://huggingface.co/datasets/julien-c/kaggle-hugomathien-soccer)  
-- **Content:** Match, player, team, and league data (European leagues, in SQLite format)  
-- **Preparation:** SQLite → CSV → text summaries by team/season → chunking (800/120) → Chroma vector store  
+- **Content:** Historical match data for selected European teams (in SQLite format)
+- **Time Period:** **2008-2015 seasons only**
+- **Covered Teams:**
+  - **England:** Manchester United, Manchester City, Liverpool, Chelsea, Arsenal, Tottenham Hotspur
+  - **Spain:** Real Madrid, FC Barcelona, Atlético Madrid
+  - **Germany:** Bayern Munich, Borussia Dortmund
+  - **Italy:** Juventus, Inter, AC Milan
+  - **France:** Paris Saint-Germain
+- **Data Processing:** SQLite → CSV → text summaries by team/season → chunking (800/120) → ChromaDB vector store  
 - **Note:** Dataset **not included in repo** – download and place inside `data/` directory as described below.
 
 ---
 
 ## ⚙️ Tech Stack
-- **LLM:** Gemini 1.5 Flash  
-- **Embedding Model:** `models/text-embedding-004`  
-- **Vector DB:** Chroma  
-- **Framework:** LangChain (langchain-google-genai)  
+- **LLM:** Google Gemini 2.5 Flash  
+- **Embedding Model:** Hugging Face Sentence Transformers (local)  
+- **Vector DB:** ChromaDB  
+- **Framework:** LangChain  
 - **Backend:** FastAPI  
 - **Web Interface:** Streamlit  
 
 ---
 
-## 📈 Performance (Sample)
-- Retrieval accuracy @top4 ≈ 85% (on 5–10 random queries)  
-- Handles bilingual (TR/EN) questions automatically  
-- Mean context size: 4 chunks  
+## 📈 Performance & Coverage
+- **Time Period Coverage:** 2008-2015 seasons (8 seasons)
+- **Teams Covered:** 14 top European teams
+- **Retrieval accuracy:** ~85% @ top-4 documents  
+- **Language Support:** English questions
+- **Response Time:** < 2 seconds average
+- **Context Window:** 4 chunks (configurable)  
 
 ---
 
@@ -56,11 +58,15 @@ python -m venv .venv
 pip install -r requirements.txt
 
 4️⃣ Create .env file
+```env
 GEMINI_API_KEY=YOUR_API_KEY
-EMBEDDING_MODEL=models/text-embedding-004
-GENERATION_MODEL=models/gemini-1.5-flash
+EMBEDDING_PROVIDER=huggingface
+GENERATION_MODEL=gemini-2.5-flash
 DOCS_DIR=./data/text
 VECTOR_DB_DIR=./chroma_db
+```
+
+❗ **Make sure your `data/text/` directory contains the processed markdown files**
 
 5️⃣ Build index
 python backend\index_builder.py
